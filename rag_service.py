@@ -28,7 +28,9 @@ def ask_a_question(question):
     context = ". ".join(sentences)
     return context
 
-# Example question
-question = "What state is Cambridge in?"
+
+question = input("Ask a question about the knowledge base: ")
+# Example question: "What state is Cambridge in?"
 context = ask_a_question(question=question)
-print(dorag(question=question, context=context))
+response = dorag(question=question, context=context)
+print(response)
