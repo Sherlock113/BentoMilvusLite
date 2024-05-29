@@ -38,49 +38,42 @@ def get_embeddings(texts: list) -> list:
         return embeddings
     return embedding_client.encode(sentences=texts)
 
-# Prepare entries with embeddings
-entries = []
+# Prepare entities with embeddings
+entities = []
+id = 0
 for city_dict in city_chunks:
     embedding_list = get_embeddings(city_dict["chunks"])
     for i, embedding in enumerate(embedding_list):
-        entry = {
-            "embedding": embedding,
+        entity = {
+		 "id": id;
+            "vector": embedding,
             "sentence": city_dict["chunks"][i],
             "city": city_dict["city_name"]
         }
-        entries.append(entry)
+        entities.append(entity)
+    id += 1
+        
+# Print entities to verify
+# print(entities)
 
-# Print entries to verify
-# print(entries)
+from pymilvus import MilvusClient
 
-from pymilvus import MilvusClient, DataType
-
-COLLECTION_NAME = "Bento_Milvus_RAG"
+COLLECTION_NAME = "Bento_Milvus_RAG" # A name for your collection
 DIMENSION = 384
 
-# Initialize a Milvus Lite client
-milvus_client = MilvusClient("./milvus_demo.db")
-
-# Create schema
-schema = MilvusClient.create_schema(
-    auto_id=True,
-    enable_dynamic_field=True,
-)
-schema.add_field(field_name="id", datatype=DataType.INT64, is_primary=True)
-schema.add_field(field_name="embedding", datatype=DataType.FLOAT_VECTOR, dim=DIMENSION)
-
-# Prepare index parameters and add index
-index_params = milvus_client.prepare_index_params()
-index_params.add_index(
-    field_name="embedding",
-    index_type="AUTOINDEX",
-    metric_type="COSINE",
-)
-
-# Create collection and insert data
+# Initialize a Milvus client
+milvus_client = MilvusClient("milvus_demo.db")
+# Create collection
 milvus_client.create_collection(
     collection_name=COLLECTION_NAME,
-    schema=schema,
-    index_params=index_params
+    dimension=DIMENSION
 )
-milvus_client.insert(collection_name=COLLECTION_NAME, data=entries)
+
+# Insert data
+res = milvus_client.insert(
+    collection_name=COLLECTION_NAME,
+    data=entities
+)
+
+# Verify the insertion
+# print(str(res["insert_count"]) + " entities inserted.")
